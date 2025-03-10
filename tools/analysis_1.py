@@ -2,20 +2,21 @@
 import json
 import pandas as pd
 current_path = os.path.dirname(__file__)
-file_path = os.path.join(current_path, "data", "rumor.json")
+
 def analysis_rumor():
+  file_path = os.path.join(current_path, "data", "辟谣网_2","1741585169_rumor.json")
   with open(file_path, "r", encoding="utf-8-sig") as f:
     data = json.load(f)
-  
   rumor_list = []
   
   for rumor in data['datasource']:
     single_rumor = {}
-    single_rumor["rumor_title"] = rumor["title"]
+    single_rumor["rumor_summary"] = rumor["summary"]
     single_rumor["rumor_keywords"] = rumor["keywords"]
-    single_rumor["rumor_quote"] = rumor["quote"]
-    single_rumor["rumor_url"] = rumor.get("imageUrl", "")
-    single_rumor["rumor_sourceText"] = rumor["sourceText"]
+    single_rumor["rumor_publishTime"] = rumor["publishTime"]
+    single_rumor["rumor_editor"] = rumor.get("editor", "")
+    single_rumor["rumor_sourceText"] = rumor.get("sourceText", "")
+
     rumor_list.append(single_rumor)
   return rumor_list
 
@@ -43,30 +44,33 @@ def source_analysis(source_counts,analysis_dir):
   source_df.to_csv(source_path, index=False, encoding='utf_8_sig')
   print(f"来源分析已保存至：{source_path}")
 
-def analysis_main(timestamp,data):
+def analysis_main(data):
+  file_path = os.path.join(current_path, "data", "辟谣网_2")
   # 数据保存
   df = pd.DataFrame(data)
   df['split_keywords'] = df['rumor_keywords'].str.split(',')
 
   # 分析处理
   keywords_count = df['split_keywords'].explode().value_counts()
-  source_counts = df['rumor_quote'].value_counts()
+  source_counts = df['rumor_sourceText'].value_counts()
 
-  # 保存原始数据
-  df.to_csv(file_path, index=False, encoding='utf_8_sig')
+  sav_path = os.path.join(file_path, "analysis_data.csv")
+
+  # 保存原始数据)
+  df.to_csv(sav_path, index=False, encoding='utf_8_sig')
 
   # 新增保存路径处理
-  analysis_dir = os.path.dirname(file_path)  # 获取data目录路径
+  analysis_dir = file_path  # 获取目录路径
 
   # 保存基础分析报告
   summary_data = {
       '统计项': ['总记录数', '标题非空数', '关键词非空数', '来源引用数', '图片URL数'],
       '数值': [
           len(df),
-          df['rumor_title'].count(),
+          df['rumor_summary'].count(),
           df['rumor_keywords'].count(),
-          df['rumor_quote'].count(),
-          df['rumor_url'].count()
+          df['rumor_publishTime'].count(),
+          df['rumor_editor'].count()
       ]
   }
   analysis_summary(summary_data,analysis_dir)
